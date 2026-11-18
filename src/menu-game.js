@@ -2,10 +2,18 @@ import { seededRandom } from './maze-topology.js';
 
 export const PAPER = { width: 900, height: 1080 };
 export const GRID = { x: 65, y: 333, cols: 15, rows: 14, width: 770, height: 539 };
-const cellWidth = GRID.width / GRID.cols, cellHeight = GRID.height / GRID.rows;
 export const INK = 3.5, WAX = 14;
+export const GO_RADIUS = 24;
+const startCellSize = 80;
 const point = (x, y) => ({x,y});
-export const center = (x,y) => point(GRID.x+(x+.5)*cellWidth, GRID.y+(y+.5)*cellHeight);
+// Give GO a square starting cell, sharing the remaining paper evenly among the other lanes.
+function gridLines(origin, span, count) {
+  const lane = (span - startCellSize) / (count - 1);
+  return Array.from({length:count+1}, (_,i) => i===0 ? origin : origin+startCellSize+(i-1)*lane);
+}
+const columnEdges = gridLines(GRID.x, GRID.width, GRID.cols);
+const rowEdges = gridLines(GRID.y, GRID.height, GRID.rows);
+export const center = (x,y) => point((columnEdges[x]+columnEdges[x+1])/2,(rowEdges[y]+rowEdges[y+1])/2);
 
 export function menuMaze(seed) {
   const {cols,rows}=GRID, random=seededRandom(seed);
@@ -22,8 +30,7 @@ export function menuMaze(seed) {
   }
   const walls=[];
   function wall(x,y,dx,dy){
-    const a=point(GRID.x+x*cellWidth,GRID.y+y*cellHeight);
-    walls.push([a,point(a.x+dx*cellWidth,a.y+dy*cellHeight)]);
+    walls.push([point(columnEdges[x],rowEdges[y]),point(columnEdges[x+dx],rowEdges[y+dy])]);
   }
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     const a=y*cols+x;
@@ -50,10 +57,10 @@ export class MenuGame {
   reset(){this.phase='pickup';this.last=null;this.drawing=false;}
   pickup(){if(this.phase==='pickup')this.phase='ready';}
   press(p){
-    if(this.phase==='ready'&&distanceToSegment(p,this.start,this.start)<=14){
-      this.last=this.start;this.phase='drawing';
-    }
-    if(this.phase!=='drawing'||distanceToSegment(p,this.last,this.last)>14)return false;
+    if(this.phase==='ready'){
+      if(Math.hypot(p.x-this.start.x,p.y-this.start.y)>GO_RADIUS+4)return false;
+      this.last=p;this.phase='drawing';
+    }else if(this.phase!=='drawing'||Math.hypot(p.x-this.last.x,p.y-this.last.y)>14)return false;
     this.drawing=true;return true;
   }
   move(p){

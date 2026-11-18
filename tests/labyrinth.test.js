@@ -3,6 +3,19 @@ import assert from 'node:assert/strict';
 import { MenuGame, GRID, INK, WAX, center, touches } from '../src/menu-game.js';
 import { validateSetup } from '../src/settings.js';
 
+test('the full enlarged GO target starts a safe stroke and resume still requires the last mark',()=>{
+  const g=new MenuGame(13);
+  for(const [dx,dy] of [[28,0],[-28,0],[0,28],[0,-28],[19,19]]){
+    const tip={x:g.start.x+dx,y:g.start.y+dy};
+    g.reset();g.pickup();
+    assert.equal(g.press({x:g.start.x+29,y:g.start.y}),false);
+    assert.ok(g.press(tip));g.move(tip);
+    assert.equal(g.phase,'drawing');assert.deepEqual(g.last,tip);
+    g.lift();assert.equal(g.press(g.start),false);assert.ok(g.press(tip));
+    g.move(g.start);assert.equal(g.phase,'drawing');
+  }
+});
+
 test('a tangent wax edge loses immediately, including on fast and resumed strokes',()=>{
   const g=new MenuGame(13);assert.equal(g.press(g.start),false);g.pickup();assert.ok(g.press(g.start));
   g.move({x:g.start.x,y:GRID.y+(INK+WAX)/2});assert.equal(g.phase,'lost');

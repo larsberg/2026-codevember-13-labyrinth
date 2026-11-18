@@ -1,4 +1,4 @@
-import { PAPER,INK,WAX } from './menu-game.js';
+import { PAPER,INK,WAX,GO_RADIUS } from './menu-game.js';
 import { seededRandom } from './maze-topology.js';
 const BLACK='#171717',WHITE='#fafafa';
 function type(c,text,x,y,size,font='Georgia',weight='bold',align='center'){
@@ -50,8 +50,8 @@ export function menuPrint(game){
   type(b,'Get to the grill!',835,296,26,'Georgia','italic','right');
   b.lineWidth=INK;b.lineCap='round';b.beginPath();
   for(const [a,d]of game.walls){b.moveTo(a.x,a.y);b.lineTo(d.x,d.y);}b.stroke();
-  b.beginPath();b.arc(game.start.x,game.start.y,12,0,Math.PI*2);b.stroke();
-  type(b,'GO',game.start.x,game.start.y+5,13,'sans-serif');burger(b,game.finish.x,game.finish.y,.28);
+  b.lineWidth=INK*2;b.beginPath();b.arc(game.start.x,game.start.y,GO_RADIUS,0,Math.PI*2);b.stroke();
+  type(b,'GO',game.start.x,game.start.y+10,26,'sans-serif');burger(b,game.finish.x,game.finish.y,.28);
   b.fillRect(65,905,770,2);
   type(b,'★    GRILLED CHEESE    •    MINI BURGERS    •    MILKSHAKES    ★',450,1040,16,'monospace');
   const ink=document.createElement('canvas');ink.width=900;ink.height=1080;
