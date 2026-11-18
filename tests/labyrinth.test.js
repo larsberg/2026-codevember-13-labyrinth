@@ -3,6 +3,24 @@ import assert from 'node:assert/strict';
 import { MenuGame, GRID, INK, WAX, center, touches } from '../src/menu-game.js';
 import { validateSetup } from '../src/settings.js';
 
+test('GO occupies a two-by-two entrance on the original uniform grid',()=>{
+  const width=GRID.width/GRID.cols,height=GRID.height/GRID.rows;
+  for(const seed of [1,13,732234,999999]){
+    const g=new MenuGame(seed);
+    assert.deepEqual(g.start,{x:GRID.x+width,y:GRID.y+height});
+    for(const wall of g.walls){
+      for(const p of wall){
+        const col=(p.x-GRID.x)/width,row=(p.y-GRID.y)/height;
+        assert.ok(Math.abs(col-Math.round(col))<1e-10);
+        assert.ok(Math.abs(row-Math.round(row))<1e-10);
+      }
+      for(const x of [0,1])for(const y of [0,1]){
+        assert.equal(touches(g.start,center(x,y),wall),false);
+      }
+    }
+  }
+});
+
 test('the full enlarged GO target starts a safe stroke and resume still requires the last mark',()=>{
   const g=new MenuGame(13);
   for(const [dx,dy] of [[28,0],[-28,0],[0,28],[0,-28],[19,19]]){

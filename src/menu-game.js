@@ -4,16 +4,10 @@ export const PAPER = { width: 900, height: 1080 };
 export const GRID = { x: 65, y: 333, cols: 15, rows: 14, width: 770, height: 539 };
 export const INK = 3.5, WAX = 14;
 export const GO_RADIUS = 24;
-const startCellSize = 80;
+const cellWidth = GRID.width / GRID.cols, cellHeight = GRID.height / GRID.rows;
 const point = (x, y) => ({x,y});
-// Give GO a square starting cell, sharing the remaining paper evenly among the other lanes.
-function gridLines(origin, span, count) {
-  const lane = (span - startCellSize) / (count - 1);
-  return Array.from({length:count+1}, (_,i) => i===0 ? origin : origin+startCellSize+(i-1)*lane);
-}
-const columnEdges = gridLines(GRID.x, GRID.width, GRID.cols);
-const rowEdges = gridLines(GRID.y, GRID.height, GRID.rows);
-export const center = (x,y) => point((columnEdges[x]+columnEdges[x+1])/2,(rowEdges[y]+rowEdges[y+1])/2);
+const gridPoint = (x,y) => point(GRID.x+x*cellWidth, GRID.y+y*cellHeight);
+export const center = (x,y) => gridPoint(x+.5,y+.5);
 
 export function menuMaze(seed) {
   const {cols,rows}=GRID, random=seededRandom(seed);
@@ -28,9 +22,12 @@ export function menuMaze(seed) {
     const b=choices[Math.floor(random()*choices.length)];
     visited.add(b);doors.add(edge(a,b));stack.push(b);
   }
+  // Merge the top-left four cells for GO, preserving every passage outside the entrance.
+  for(const row of [0,cols])doors.add(edge(row,row+1));
+  for(const col of [0,1])doors.add(edge(col,col+cols));
   const walls=[];
   function wall(x,y,dx,dy){
-    walls.push([point(columnEdges[x],rowEdges[y]),point(columnEdges[x+dx],rowEdges[y+dy])]);
+    walls.push([gridPoint(x,y),gridPoint(x+dx,y+dy)]);
   }
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     const a=y*cols+x;
@@ -39,7 +36,7 @@ export function menuMaze(seed) {
     if(x===cols-1||!doors.has(edge(a,a+1)))wall(x+1,y,0,1);
     if(y===rows-1||!doors.has(edge(a,a+cols)))wall(x,y+1,1,0);
   }
-  return {walls,start:center(0,0),finish:center(cols-1,rows-1)};
+  return {walls,start:gridPoint(1,1),finish:center(cols-1,rows-1)};
 }
 function distanceToSegment(p,a,b){
   const dx=b.x-a.x,dy=b.y-a.y;
