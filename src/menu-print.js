@@ -7,8 +7,8 @@ function type(c,text,x,y,size,font='Georgia',weight='bold',align='center'){
 function checker(c,x,y,count){
   for(let i=0;i<count;i++)for(let j=0;j<2;j++)if((i+j)%2===0)c.fillRect(x+i*12,y+j*12,12,12);
 }
-function burger(c,x,y,scale){
-  c.save();c.translate(x,y);c.scale(scale,scale);c.lineWidth=4;c.lineJoin='round';c.fillStyle=WHITE;
+function burger(c,x,y,scale,lineWidth=4){
+  c.save();c.translate(x,y);c.scale(scale,scale);c.lineWidth=lineWidth;c.lineJoin='round';c.fillStyle=WHITE;
   for(const path of ['M-54 0 Q-52 -43 0 -43 Q48 -42 54 0 Z','M-54 8 Q-43 -1 -32 8 T-10 8 T12 8 T35 8 Q47 3 54 9 Q55 16 45 17 L-45 17 Q-58 16 -54 8Z','M-50 23 L50 23 Q48 40 30 40 L-30 40 Q-49 39 -50 23Z']){
     const shape=new Path2D(path);c.fill(shape);c.stroke(shape);
   }
@@ -50,8 +50,14 @@ export function menuPrint(game){
   type(b,'Get to the grill!',835,296,26,'Georgia','italic','right');
   b.lineWidth=INK;b.lineCap='round';b.beginPath();
   for(const [a,d]of game.walls){b.moveTo(a.x,a.y);b.lineTo(d.x,d.y);}b.stroke();
-  b.lineWidth=INK*2;b.beginPath();b.arc(game.start.x,game.start.y,GO_RADIUS,0,Math.PI*2);b.stroke();
-  type(b,'GO',game.start.x,game.start.y+10,26,'sans-serif');burger(b,game.finish.x,game.finish.y,.28);
+  b.save();
+  b.translate(game.start.x,game.start.y);
+  b.lineWidth=2;b.beginPath();b.arc(0,0,GO_RADIUS,0,Math.PI*2);b.stroke();
+  b.lineJoin='round';b.lineWidth=2.5;
+  type(b,'GO',0,9,26,'Arial, sans-serif','900');
+  b.strokeText('GO',0,9);
+  b.restore();
+  burger(b,game.finish.x,game.finish.y,.30,11);
   b.fillRect(65,905,770,2);
   type(b,'★    GRILLED CHEESE    •    MINI BURGERS    •    MILKSHAKES    ★',450,1040,16,'monospace');
   const ink=document.createElement('canvas');ink.width=900;ink.height=1080;
