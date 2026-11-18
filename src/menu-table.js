@@ -9,8 +9,8 @@ const onTable=(p,y=TOP)=>new T.Vector3((p.x-PAPER.width/2)*SCALE,y,(p.y-PAPER.he
 const CRAYON_SCALE=2;
 const halfLength=1.51*CRAYON_SCALE, radius=.143*CRAYON_SCALE;
 const rest=onTable({x:475,y:952},TOP+radius);
-export function menuTable(scene,canvas,camera,settings,generation,alarm){
-  const game=new MenuGame(settings.feather.seed+generation*104729),print=menuPrint(game);
+export function menuTable(scene,canvas,camera,settings,generation,alarm,grid){
+  const game=new MenuGame(settings.feather.seed+generation*104729,grid),print=menuPrint(game);
   const group=new T.Group();scene.add(group);
   const texture=new T.CanvasTexture(print.canvas);texture.colorSpace=T.SRGBColorSpace;texture.anisotropy=8;
   const materials=Object.fromEntries(['panels','struts','pistons','joints'].map(k=>[k,new T.MeshStandardMaterial()]));

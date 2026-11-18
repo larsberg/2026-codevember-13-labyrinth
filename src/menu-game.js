@@ -2,15 +2,16 @@ import { seededRandom } from './maze-topology.js';
 
 export const PAPER = { width: 900, height: 1080 };
 export const GRID = { x: 65, y: 333, cols: 15, rows: 14, width: 770, height: 539 };
+export const MOBILE_GRID = { ...GRID, cols: 8, rows: 7 };
 export const INK = 3.5, WAX = 14;
 export const GO_RADIUS = 24;
-const cellWidth = GRID.width / GRID.cols, cellHeight = GRID.height / GRID.rows;
+const GO_HIT_RADIUS = GO_RADIUS + 4;
 const point = (x, y) => ({x,y});
-const gridPoint = (x,y) => point(GRID.x+x*cellWidth, GRID.y+y*cellHeight);
-export const center = (x,y) => gridPoint(x+.5,y+.5);
+const gridPoint = (x,y,grid) => point(grid.x+x*(grid.width/grid.cols), grid.y+y*(grid.height/grid.rows));
+export const center = (x,y,grid=GRID) => gridPoint(x+.5,y+.5,grid);
 
-export function menuMaze(seed) {
-  const {cols,rows}=GRID, random=seededRandom(seed);
+export function menuMaze(seed, grid=GRID) {
+  const {cols,rows}=grid, random=seededRandom(seed);
   const edge = (a,b) => [Math.min(a,b),Math.max(a,b)].join('/');
   const visited=new Set([0]), stack=[0], doors=new Set();
   while(stack.length){
@@ -22,12 +23,16 @@ export function menuMaze(seed) {
     const b=choices[Math.floor(random()*choices.length)];
     visited.add(b);doors.add(edge(a,b));stack.push(b);
   }
-  // Merge the top-left four cells for GO, preserving every passage outside the entrance.
-  for(const row of [0,cols])doors.add(edge(row,row+1));
-  for(const col of [0,1])doors.add(edge(col,col+cols));
+  // GO needs space for the whole tap target plus the wax and wall edges.
+  let start=center(0,0,grid);
+  if(Math.min(grid.width/cols,grid.height/rows)/2 <= GO_HIT_RADIUS+(INK+WAX)/2){
+    for(const row of [0,cols])doors.add(edge(row,row+1));
+    for(const col of [0,1])doors.add(edge(col,col+cols));
+    start=gridPoint(1,1,grid);
+  }
   const walls=[];
   function wall(x,y,dx,dy){
-    walls.push([gridPoint(x,y),gridPoint(x+dx,y+dy)]);
+    walls.push([gridPoint(x,y,grid),gridPoint(x+dx,y+dy,grid)]);
   }
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
     const a=y*cols+x;
@@ -36,7 +41,7 @@ export function menuMaze(seed) {
     if(x===cols-1||!doors.has(edge(a,a+1)))wall(x+1,y,0,1);
     if(y===rows-1||!doors.has(edge(a,a+cols)))wall(x,y+1,1,0);
   }
-  return {walls,start:gridPoint(1,1),finish:center(cols-1,rows-1)};
+  return {grid,walls,start,finish:center(cols-1,rows-1,grid)};
 }
 function distanceToSegment(p,a,b){
   const dx=b.x-a.x,dy=b.y-a.y;
@@ -50,12 +55,12 @@ export function touches(a,b,[c,d]){
     distanceToSegment(c,a,b),distanceToSegment(d,a,b))<=(INK+WAX)/2;
 }
 export class MenuGame {
-  constructor(seed){Object.assign(this,menuMaze(seed));this.reset();}
+  constructor(seed,grid=GRID){Object.assign(this,menuMaze(seed,grid));this.reset();}
   reset(){this.phase='pickup';this.last=null;this.drawing=false;}
   pickup(){if(this.phase==='pickup')this.phase='ready';}
   press(p){
     if(this.phase==='ready'){
-      if(Math.hypot(p.x-this.start.x,p.y-this.start.y)>GO_RADIUS+4)return false;
+      if(Math.hypot(p.x-this.start.x,p.y-this.start.y)>GO_HIT_RADIUS)return false;
       this.last=p;this.phase='drawing';
     }else if(this.phase!=='drawing'||Math.hypot(p.x-this.last.x,p.y-this.last.y)>14)return false;
     this.drawing=true;return true;

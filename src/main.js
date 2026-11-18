@@ -12,6 +12,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { applyCameraView as applyStudioCameraView, captureCameraView as captureStudioCameraView, configureOrbitInputs, createCameraFollow } from './camera.js';
 import { initPhysics } from './physics.js';
 import { menuTable } from './menu-table.js';
+import { GRID, MOBILE_GRID } from './menu-game.js';
 const STAGE_SPOT_TARGET = new Vector3(0,0,0);
 import { createControls } from './controls.js';
 import { defaultSetup, validateSetup, DEFAULT_CAMERA } from './settings.js';
@@ -80,9 +81,11 @@ const palette = () => libraryPalettes(settings.paletteLibrary).find(p => p.id ==
 const audio=menuAudio(state=>controls?.audioStatus(state));
 let surface, controls, materialControls, lightingControls, rigKey, generation=0;
 const keyForRig=()=>settings.feather.seed;
+const phoneViewport=window.matchMedia('(max-width: 600px), (pointer: coarse) and (max-height: 600px)');
+const menuGrid=()=>phoneViewport.matches ? MOBILE_GRID : GRID;
 function rebuild(){
   surface?.dispose();audio.clearEffects();
-  surface=menuTable(scene,canvas,camera,settings,generation,()=>audio.alarm());
+  surface=menuTable(scene,canvas,camera,settings,generation,()=>audio.alarm(),menuGrid());
   rigKey=keyForRig();floor.position.y=0;
   follow.reset(focus);applyCameraView(settings.camera,camera,orbit,focus);
 }
@@ -181,6 +184,10 @@ function newMenu(e){
 }
 document.addEventListener('keydown',newMenu);
 function resize(){
+  if(surface.game.phase==='pickup' && surface.game.grid!==menuGrid()){
+    rebuild();
+    configure();
+  }
   renderer.setSize(innerWidth,innerHeight,false);effects.resize(innerWidth,innerHeight);
   camera.aspect=innerWidth/innerHeight;camera.fov=42;
   camera.zoom=Math.min(1,camera.aspect/.87);camera.updateProjectionMatrix();
