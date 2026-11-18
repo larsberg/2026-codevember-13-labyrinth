@@ -1,3 +1,4 @@
+import { drawerRequested } from './drawer-url.js';
 import { lightingControlsMarkup } from './lighting-controls.js';
 import { materialControlsMarkup } from './material-controls.js';
 import { fields } from './settings.js';
@@ -41,13 +42,29 @@ export function createControls({settings,change,save,reload,resetView,exportDraw
       </fieldset></div>
     </aside>`);
   const query=s=>shell.querySelector(s),drawer=query('.control-panel'),toggle=query('.drawer-toggle');
-  let ui=['true','1'].includes(new URLSearchParams(location.search).get('ui')?.toLowerCase()),current=settings,stats;
-  toggle.hidden=!ui;toggle.disabled=!ui;drawer.inert=!ui;shell.classList.toggle('controls-visible',ui);
+  let ui=false,current=settings,stats;
+  function showControls(enabled){
+    ui=enabled;
+    toggle.hidden=!enabled;
+    toggle.disabled=!enabled;
+    drawer.inert=!enabled;
+    shell.classList.toggle('controls-visible',enabled);
+    if(enabled)open(true);
+    else{drawer.hidden=true;toggle.setAttribute('aria-expanded','false');}
+  }
   function open(on){if(!ui)return;drawer.hidden=!on;toggle.setAttribute('aria-expanded',String(on));toggle.title=on?'Close controls':'Open controls';toggle.setAttribute('aria-label',toggle.title);if(document.hasFocus())(on?drawer.querySelector('button'):toggle).focus({preventScroll:true});}
   toggle.addEventListener('click',()=>open(drawer.hidden));
   const tabButtons=[...shell.querySelectorAll('[role="tab"]')];
   function select(tab){for(const item of tabButtons){const active=item===tab;item.setAttribute('aria-selected',String(active));item.tabIndex=active?0:-1;query(`#${item.getAttribute('aria-controls')}`).hidden=!active;}query('.drawer-content').scrollTop=0;shell.dispatchEvent(new CustomEvent('control-tab-change',{detail:tab.id}));}
   tabButtons.forEach((tab,i)=>{tab.addEventListener('click',()=>select(tab));tab.addEventListener('keydown',e=>{const next=e.key==='ArrowRight'?tabButtons[(i+1)%tabButtons.length]:e.key==='ArrowLeft'?tabButtons[(i+tabButtons.length-1)%tabButtons.length]:e.key==='Home'?tabButtons[0]:e.key==='End'?tabButtons.at(-1):null;if(next){e.preventDefault();select(next);if(document.hasFocus())next.focus();}});});
+  select(query('#tab-audio'));
+  let urlFlag=drawerRequested(location.href);
+  showControls(urlFlag);
+  window.addEventListener('hashchange',()=>{
+    const next=drawerRequested(location.href);
+    if(next!==urlFlag)showControls(next);
+    urlFlag=next;
+  });
   function status(message,error=false){query('.setup-status').textContent=message;query('.setup-status').dataset.error=error;}
   function audioStatus(state){const start=query('.audio-start'),stop=query('.audio-stop'),message=query('.audio-status');start.textContent=state.waitingForInteraction?'Tap to enable sounds':state.busy?'Loading…':state.enabled?'Sounds enabled':'Enable sounds';start.disabled=(state.busy&&!state.waitingForInteraction)||state.playing||(state.enabled&&state.paused);start.setAttribute('aria-pressed',String(state.enabled));stop.disabled=!state.enabled;message.textContent=state.message;message.dataset.error=String(state.error);}
   query('.audio-start').addEventListener('click',()=>setSoundEnabled(true));query('.audio-stop').addEventListener('click',()=>setSoundEnabled(false));
@@ -70,7 +87,7 @@ export function createControls({settings,change,save,reload,resetView,exportDraw
       e.preventDefault();action(audition)();return;
     }
     if(!document.hasFocus()||e.target.closest('input,textarea,select,[contenteditable="true"]')||e.ctrlKey||e.metaKey||e.altKey)return;
-    if(e.code==='KeyH'&&!e.repeat){ui=!ui;toggle.hidden=!ui;toggle.disabled=!ui;drawer.inert=!ui;shell.classList.toggle('controls-visible',ui);if(ui)open(true);else{drawer.hidden=true;toggle.setAttribute('aria-expanded','false');}e.preventDefault();}
+    if(e.code==='KeyH'&&!e.repeat){showControls(!ui);e.preventDefault();}
     if(e.key==='Escape'&&!drawer.hidden)open(false);
     if(e.code==='KeyM'&&!e.repeat)action(toggleSound)();
     if(e.code==='KeyP'&&!e.repeat){e.preventDefault();togglePlaying();}

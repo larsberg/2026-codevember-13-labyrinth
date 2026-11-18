@@ -12,7 +12,8 @@ test('a tangent wax edge loses immediately, including on fast and resumed stroke
   assert.ok(Math.abs(g.last.x-(GRID.x+(INK+WAX)/2))<.02);
   const wall=[{x:0,y:0},{x:0,y:60}];
   assert.equal(touches({x:-500,y:30},{x:500,y:30},wall),true);
-  assert.equal(touches({x:-10,y:66},{x:10,y:66},wall),false);
+  const clearY=wall[1].y+(INK+WAX)/2+.01;
+  assert.equal(touches({x:-10,y:clearY},{x:10,y:clearY},wall),false);
 });
 test('each printed maze has a drawable route to the burger',()=>{
   for(const seed of [1,13,732234,999999]){
