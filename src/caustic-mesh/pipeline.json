@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "triangulateEnabled": true,
+  "initialDiamondDualEnabled": true,
+  "faceCenterDualEnabled": false,
+  "averageVerticesEnabled": false,
+  "insetEnabled": false,
+  "insetScale": 0.5,
+  "excludeInitialBorderTriangles": true,
+  "subdivisionEnabled": false,
+  "subdivisionIterations": 1,
+  "diamondDualEnabled": false,
+  "hexelateTriangulateEnabled": true,
+  "hexelateEnabled": true,
+  "finalAverageVerticesEnabled": true,
+  "smoothingIterations": 3,
+  "smoothingStrength": 0.82
+}
