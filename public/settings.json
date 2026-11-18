@@ -290,15 +290,15 @@
     "spotlight": {
       "enabled": true,
       "color": "#ffffff",
-      "intensity": 3400,
-      "offsetX": -10,
-      "height": 22,
-      "offsetZ": 16,
+      "intensity": 4200,
+      "offsetX": -16,
+      "height": 21,
+      "offsetZ": -9,
       "angle": 27,
       "penumbra": 0.8,
       "castShadow": true,
-      "softness": 9,
-      "shadowBias": -0.00004,
+      "softness": 2.5,
+      "shadowBias": -4e-05,
       "normalBias": 0.015
     },
     "directional": {

@@ -1,10 +1,11 @@
+import { dressTable } from './diner-cloth.js';
 import { attachPlayerBridge } from './player-bridge.js';
 // Studio shell inherited from 12-feather; only the subject is replaced.
 import './style.css';
 import './mesh-style.css';
 import {
   ACESFilmicToneMapping, Color, DirectionalLight, HemisphereLight, PCFShadowMap,
-  CanvasTexture, RepeatWrapping, MOUSE, TOUCH, PerspectiveCamera, PMREMGenerator, Scene, SpotLight, SRGBColorSpace, Vector3, WebGLRenderer,
+  MOUSE, TOUCH, PerspectiveCamera, PMREMGenerator, Scene, SpotLight, SRGBColorSpace, Vector3, WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -74,16 +75,7 @@ const spotlight = new SpotLight(); spotlight.shadow.mapSize.set(2048, 2048);
 spotlight.shadow.camera.near = 1; spotlight.shadow.camera.far = 240; scene.add(spotlight, spotlight.target);
 const effects = createSceneEffects(renderer, scene, camera, { clampBeauty: false });
 const floor = createStageFloor();scene.add(floor); floor.layers.enable(1);
-// Woven diner checks catch the shadow below the thin paper edge.
-const cloth=document.createElement('canvas');cloth.width=cloth.height=128;
-const weave=cloth.getContext('2d');
-weave.fillStyle='#c4c4c4';weave.fillRect(0,0,128,128);
-weave.fillStyle='rgba(42,42,42,.21)';weave.fillRect(0,0,64,128);weave.fillRect(0,0,128,64);
-weave.fillStyle='rgba(255,255,255,.1)';
-for(let i=0;i<128;i+=4){weave.fillRect(i,0,1,128);weave.fillRect(0,i,128,1);}
-const clothMap=new CanvasTexture(cloth);clothMap.colorSpace=SRGBColorSpace;
-clothMap.wrapS=clothMap.wrapT=RepeatWrapping;clothMap.repeat.set(8000,8000);clothMap.anisotropy=8;
-floor.material.map=clothMap;floor.material.color.set('#a1a1a1');
+const disposeCloth=dressTable(floor.material,renderer);
 const palette = () => libraryPalettes(settings.paletteLibrary).find(p => p.id === settings.paletteId);
 const audio=menuAudio(state=>controls?.audioStatus(state));
 let surface, controls, materialControls, lightingControls, rigKey, generation=0;
@@ -207,7 +199,7 @@ document.addEventListener('visibilitychange',()=>{
 window.addEventListener('pagehide', () => {
   document.removeEventListener('keydown',newMenu);
   renderer.setAnimationLoop(null); audio.dispose(); lightingControls.dispose(); effects.dispose(); surface.dispose();  orbit.dispose();
-  floor.geometry.dispose(); floor.material.dispose(); clothMap.dispose();
+  floor.geometry.dispose(); floor.material.dispose(); disposeCloth();
   for(const source of [light,fill,spotlight])source.shadow.dispose();
   environment.dispose(); room.dispose(); pmrem.dispose(); renderer.dispose();
   window.removeEventListener('resize',resize);

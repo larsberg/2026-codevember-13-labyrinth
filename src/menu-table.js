@@ -1,12 +1,14 @@
 import * as T from 'three';
 import { MenuGame,PAPER } from './menu-game.js';
-import { menuPrint } from './menu-print.js';
+import { menuPrint, BLACK_WAX } from './menu-print.js';
 import { applyMaterialSettings } from './material-settings.js';
 import { createPhysics } from './physics.js';
 
 const TOP=.095, SCALE=.014, UP=new T.Vector3(0,1,0);
 const onTable=(p,y=TOP)=>new T.Vector3((p.x-PAPER.width/2)*SCALE,y,(p.y-PAPER.height/2)*SCALE);
-const rest=onTable({x:535,y:952},TOP+.16);
+const CRAYON_SCALE=2;
+const halfLength=1.51*CRAYON_SCALE, radius=.143*CRAYON_SCALE;
+const rest=onTable({x:475,y:952},TOP+radius);
 export function menuTable(scene,canvas,camera,settings,generation,alarm){
   const game=new MenuGame(settings.feather.seed+generation*104729),print=menuPrint(game);
   const group=new T.Group();scene.add(group);
@@ -18,7 +20,7 @@ export function menuTable(scene,canvas,camera,settings,generation,alarm){
   page.rotation.x=-Math.PI/2;page.position.y=TOP;
   const backing=mesh(new T.BoxGeometry(PAPER.width*SCALE,.045,PAPER.height*SCALE),materials.pistons);
   backing.position.y=TOP-.026;
-  const crayon=new T.Group();group.add(crayon);
+  const crayon=new T.Group();crayon.scale.setScalar(CRAYON_SCALE);group.add(crayon);
   function tube(bottom,top,height,base,mat){const obj=mesh(new T.CylinderGeometry(top,bottom,height,24),mat,crayon);obj.position.y=base+height/2;}
   tube(.017,.136,.37,0,materials.struts);tube(.136,.136,2.65,.37,materials.struts);
   tube(.14,.14,2.2,.62,materials.joints);
@@ -32,6 +34,14 @@ export function menuTable(scene,canvas,camera,settings,generation,alarm){
   physics.addBody({body:{type:'static',position:{x:0,y:TOP-.55,z:0}},shapes:[{type:'box',halfExtents:{x:40,y:.55,z:40}}]});
   let tossed=null,activePointer=null,playing=true;
   const restDir=new T.Vector3(.99,.011,-.12).normalize(),heldDir=new T.Vector3(.55,.82,.14).normalize();
+  const restingWax=new T.Color(),restingWrapper=new T.Color();
+  function syncPigment(){
+    if(game.phase==='pickup'){
+      materials.struts.color.copy(restingWax);materials.joints.color.copy(restingWrapper);
+    }else{
+      materials.struts.color.set(BLACK_WAX);materials.joints.color.set('#383838');
+    }
+  }
   function park(){crayon.position.copy(rest);crayon.quaternion.setFromUnitVectors(UP,restDir);crayon.rotateY(-Math.PI/2);}
   park();
   const ray=new T.Raycaster(),tablePlane=new T.Plane(UP,-TOP);
@@ -45,11 +55,11 @@ export function menuTable(scene,canvas,camera,settings,generation,alarm){
   function hold(p,lift=0){crayon.position.copy(onTable(p,TOP+lift));crayon.quaternion.setFromUnitVectors(UP,heldDir);}
   function release(){const id=activePointer;activePointer=null;game.lift();if(id!==null&&canvas.hasPointerCapture(id))canvas.releasePointerCapture(id);}
   function toss(){
-    const q=crayon.quaternion.clone(),pos=crayon.position.clone().addScaledVector(heldDir,1.5);
-    tossed=physics.addBody({body:{type:'dynamic',position:pos,rotation:q,angularDamping:1.6,linearDamping:.8},shapes:[{type:'box',halfExtents:{x:.135,y:1.5,z:.135}}]});
+    const q=crayon.quaternion.clone(),pos=crayon.position.clone().addScaledVector(heldDir,halfLength);
+    tossed=physics.addBody({body:{type:'dynamic',position:pos,rotation:q,angularDamping:1.6,linearDamping:.8},shapes:[{type:'box',halfExtents:{x:radius,y:halfLength,z:radius}}]});
     tossed.body.setLinearVelocity({x:2,y:2.2,z:.7});tossed.body.setAngularVelocity({x:.4,y:.5,z:-3});
   }
-  function reset(){release();if(tossed){physics.removeBody(tossed);tossed=null;}game.reset();print.clear();park();paint();}
+  function reset(){release();if(tossed){physics.removeBody(tossed);tossed=null;}game.reset();syncPigment();print.clear();park();paint();}
   function draw(p){
     const from=game.last;game.move(p);
     if(game.phase==='lost'){
@@ -62,9 +72,9 @@ export function menuTable(scene,canvas,camera,settings,generation,alarm){
     const p=input(e);if(!p)return;
     if(game.phase==='lost'||game.phase==='won'){if(onPaper(p))reset();return;}
     if(game.phase==='pickup'){
-      const dist=ray.ray.distanceSqToSegment(rest,rest.clone().addScaledVector(restDir,3.05));
-      if(dist>.40**2)return;
-      game.pickup();hold(p,.2);paint();return;
+      const dist=ray.ray.distanceSqToSegment(rest,rest.clone().addScaledVector(restDir,2*halfLength));
+      if(dist>(radius+.26)**2)return;
+      game.pickup();syncPigment();hold(p,.2);paint();return;
     }
     if(game.press(p)){activePointer=e.pointerId;canvas.setPointerCapture(e.pointerId);draw(p);}
   }
@@ -79,7 +89,11 @@ export function menuTable(scene,canvas,camera,settings,generation,alarm){
   }
   function up(e){if(activePointer===e.pointerId){move(e);release();paint();}}
   function cancel(){if(activePointer!==null){release();paint();}}
-  const handlers={pointerdown:down,pointermove:move,pointerup:up,pointercancel:cancel,lostpointercapture:cancel};
+  function cancelPointer(e){if(activePointer===e.pointerId)cancel();}
+  // Drawing uses pointer events. Claim the touch before a stationary finger opens a native menu.
+  function preventMenu(e){if(e.cancelable)e.preventDefault();}
+  canvas.addEventListener('touchstart',preventMenu,{passive:false});
+  const handlers={pointerdown:down,pointermove:move,pointerup:up,pointercancel:cancelPointer,lostpointercapture:cancelPointer,contextmenu:preventMenu};
   for(const [key,fn]of Object.entries(handlers))canvas.addEventListener(key,fn);
   window.addEventListener('blur',cancel);
   return {materials,game,reset,get diagnostics(){return {phase:game.phase,drawing:game.drawing};},
@@ -91,9 +105,10 @@ export function menuTable(scene,canvas,camera,settings,generation,alarm){
         const tint=new T.Color(palette.environment.keyColor);
         materials.joints.color.multiplyScalar(.72+.28*(tint.r+tint.g+tint.b)/3);
       }
+      restingWax.copy(materials.struts.color);restingWrapper.copy(materials.joints.color);syncPigment();
     },
-    step(dt){if(!tossed)return;physics.step(dt);crayon.quaternion.copy(tossed.body.getRotation());crayon.position.copy(tossed.body.getPosition()).addScaledVector(UP.clone().applyQuaternion(crayon.quaternion),-1.5);},
-    dispose(){cancel();window.removeEventListener('blur',cancel);for(const [key,fn]of Object.entries(handlers))canvas.removeEventListener(key,fn);physics.dispose();scene.remove(group);group.traverse(o=>o.geometry?.dispose());Object.values(materials).forEach(m=>m.dispose());lm.dispose();texture.dispose();labelMap.dispose();}
+    step(dt){if(!tossed)return;physics.step(dt);crayon.quaternion.copy(tossed.body.getRotation());crayon.position.copy(tossed.body.getPosition()).addScaledVector(UP.clone().applyQuaternion(crayon.quaternion),-halfLength);},
+    dispose(){cancel();window.removeEventListener('blur',cancel);canvas.removeEventListener('touchstart',preventMenu);for(const [key,fn]of Object.entries(handlers))canvas.removeEventListener(key,fn);physics.dispose();scene.remove(group);group.traverse(o=>o.geometry?.dispose());Object.values(materials).forEach(m=>m.dispose());lm.dispose();texture.dispose();labelMap.dispose();}
   };
 }
 

@@ -3,7 +3,7 @@ import { seededRandom } from './maze-topology.js';
 export const PAPER = { width: 900, height: 1080 };
 export const GRID = { x: 65, y: 333, cols: 15, rows: 14, width: 770, height: 539 };
 const cellWidth = GRID.width / GRID.cols, cellHeight = GRID.height / GRID.rows;
-export const INK = 3.5, WAX = 10;
+export const INK = 3.5, WAX = 14;
 const point = (x, y) => ({x,y});
 export const center = (x,y) => point(GRID.x+(x+.5)*cellWidth, GRID.y+(y+.5)*cellHeight);
 

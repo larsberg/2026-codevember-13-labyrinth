@@ -59,7 +59,7 @@ export function defaultSetup() {
   result.lighting.hemisphere.enabled=true;result.lighting.hemisphere.intensity=.45;
   result.lighting.fill.enabled=true;result.lighting.fill.intensity=.7;
   result.lighting.environment.intensity=.7;
-  result.lighting.spotlight.color='#ffffff';result.lighting.spotlight.intensity=3400;
+  Object.assign(result.lighting.spotlight,{color:'#ffffff',intensity:4200,offsetX:-16,height:21,offsetZ:-9,softness:2.5});
   result.lighting.fill.color='#ffffff';result.lighting.hemisphere.skyColor='#ffffff';result.lighting.hemisphere.groundColor='#969696';
   result.materials.panels.roughness=.96;
   result.audio.enabled=true;

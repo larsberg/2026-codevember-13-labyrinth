@@ -22,6 +22,18 @@ function shake(c,x,y){
   }
   c.beginPath();c.arc(0,14,15,0,Math.PI*2);c.stroke();c.beginPath();c.arc(0,13,8,.15,Math.PI-.15);c.stroke();c.restore();
 }
+export const BLACK_WAX='#161616';
+function waxPigment(context){
+  const tile=document.createElement('canvas');tile.width=tile.height=64;
+  const pigment=tile.getContext('2d'),random=seededRandom(239);
+  pigment.fillStyle=BLACK_WAX;pigment.fillRect(0,0,64,64);
+  // Small breaks in the wax let the raised tooth of the paper show through.
+  for(let i=0;i<470;i++){
+    pigment.fillStyle='rgba(246,246,246,'+(.12+random()*.44)+')';
+    pigment.fillRect(random()*64,random()*64,1+random()*1.3,1);
+  }
+  return context.createPattern(tile,'repeat');
+}
 export function menuPrint(game){
   const canvas=document.createElement('canvas');canvas.width=PAPER.width;canvas.height=PAPER.height;
   const c=canvas.getContext('2d'),base=document.createElement('canvas');base.width=canvas.width;base.height=canvas.height;
@@ -34,7 +46,7 @@ export function menuPrint(game){
   burger(b,119,156,1.04);shake(b,785,150);
   type(b,'Little Bites',450,175,100,'Georgia','italic bold');
   type(b,'K I D S ’   M E N U',450,213,22,'sans-serif');
-  b.fillRect(65,241,770,3);type(b,'THE BURGER MAZE',66,299,43,'sans-serif','900','left');
+  b.fillRect(65,241,770,3);type(b,'BERGER MAZE',66,299,43,'sans-serif','900','left');
   type(b,'Get to the grill!',835,296,26,'Georgia','italic','right');
   b.lineWidth=INK;b.lineCap='round';b.beginPath();
   for(const [a,d]of game.walls){b.moveTo(a.x,a.y);b.lineTo(d.x,d.y);}b.stroke();
@@ -43,7 +55,7 @@ export function menuPrint(game){
   b.fillRect(65,905,770,2);
   type(b,'★    GRILLED CHEESE    •    MINI BURGERS    •    MILKSHAKES    ★',450,1040,16,'monospace');
   const ink=document.createElement('canvas');ink.width=900;ink.height=1080;
-  const pen=ink.getContext('2d');pen.strokeStyle='#515151';pen.lineWidth=WAX;pen.lineCap='round';
+  const pen=ink.getContext('2d');pen.strokeStyle=waxPigment(pen);pen.lineWidth=WAX;pen.lineCap='round';
   function stroke(a,d){pen.beginPath();pen.moveTo(a.x,a.y);pen.lineTo(d.x,d.y);pen.stroke();}
   function refresh(){
     c.drawImage(base,0,0);c.drawImage(ink,0,0);c.fillStyle=BLACK;
